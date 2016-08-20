@@ -1,7 +1,11 @@
 import datetime
+import logging
 
 from bs4 import BeautifulSoup
 import requests
+
+
+logger = logging.getLogger(__name__)
 
 
 class PlanetMoneyDataLoader:
@@ -9,6 +13,7 @@ class PlanetMoneyDataLoader:
 
     @classmethod
     def ingest(cls, offset=1):
+        logger.info('Loading offset %d.', offset)
         response = requests.get(cls.url.format(offset))
 
         # Although slow, the html5lib parser is good at dealing with the broken HTML
@@ -20,12 +25,26 @@ class PlanetMoneyDataLoader:
         for articles in articles:
             info = articles.find(class_='item-info')
 
-            # TODO: Create model instances or leave that to the caller? The latter facilitates threading.
-            publication_date = datetime.datetime.strptime(info.time['datetime'], '%Y-%m-%d')
+            publication_date = datetime.datetime.strptime(info.time['datetime'], '%Y-%m-%d').date()
             title = info.find(class_='title').string
-            teaser = list(info.find(class_='teaser').children)[-1].strip()
-            embed_url = info.find(class_='audio-tool-embed').button['data-embed-url']
-            download_url = info.find(class_='audio-tool-download').a['href']
+            
+            try:
+                teaser = list(info.find(class_='teaser').children)[-1].strip()
+            except:
+                logger.info('Teaser missing for %s.', title)
+                teaser = ''
+
+            try:
+                embed_url = info.find(class_='audio-tool-embed').button['data-embed-url']
+            except:
+                logger.info('Embed URL missing for %s.', title)
+                embed_url = ''
+
+            try:
+                download_url = info.find(class_='audio-tool-download').a['href']
+            except:
+                logger.info('Download URL missing for %s.', title)
+                download_url = ''
 
             # Intentionally excluded. Not accurate, and not always provided.
             # duration = info.find(class_='audio-module-duration').string
