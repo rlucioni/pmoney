@@ -22,8 +22,8 @@ class PlanetMoneyDataLoader:
         articles = soup.find_all(class_='podcast-episode')
 
         podcasts = []
-        for articles in articles:
-            info = articles.find(class_='item-info')
+        for article in articles:
+            info = article.find(class_='item-info')
 
             publication_date = datetime.datetime.strptime(info.time['datetime'], '%Y-%m-%d').date()
             title = info.find(class_='title').string
@@ -31,8 +31,12 @@ class PlanetMoneyDataLoader:
             try:
                 teaser = list(info.find(class_='teaser').children)[-1].strip()
             except:
-                logger.info('Teaser missing for %s.', title)
-                teaser = ''
+                try:
+                    # Some articles have really broken HTML.
+                    teaser = info.find_all('p')[1].string
+                except:
+                    logger.info('Teaser missing for %s.', title)
+                    teaser = ''
 
             try:
                 embed_url = info.find(class_='audio-tool-embed').button['data-embed-url']
