@@ -12,6 +12,8 @@ class Podcast(models.Model):
     embed_url = models.URLField(max_length=255)
     download_url = models.URLField(max_length=255)
 
+    listened = models.BooleanField(default=False)
+
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
